@@ -32,17 +32,19 @@ class OpenDistro():
     """
     opendistro_path = "_opendistro/_security/api/"
 
-    def __init__(self, user, pwd, host='localhost', port=9200, ssl=True):
+    def __init__(self, user, pwd, host='localhost', port=9200, ssl=True,verify_certs=True):
         self.pwd = pwd
         self.user = user
         self.host = host
         self.pwd = pwd
         self.port = port
         self.ssl = ssl
-        self.base_url = f"https://{host}:{port}/"
+        self.verify_certs = verify_certs
+        self.base_url = f"https://{host}:{port}/" if ssl else f"http://{host}:{port}"
         self.elastic_search = Elasticsearch(hosts=[f"{self.host}:{self.port}"],
                                 use_ssl=self.ssl,
-                                http_auth=(self.user, self.pwd)
+                                http_auth=(self.user, self.pwd),
+                                verify_certs=self.verify_certs
                                 )
 
     def check_connection(self):

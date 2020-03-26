@@ -44,7 +44,8 @@ if(ODPWD is None):
 OPEN_DISTRO =  OPEN_DISTRO = OpenDistro(host=ODHOST,
                                         port=ODPORT ,
                                         user=ODUSER, 
-                                        pwd=ODPWD)
+                                        pwd=ODPWD,
+                                        verify_certs=False)
 #Check the connection
 if (OPEN_DISTRO.check_connection()):
     print(f"\n--> We are able to reach {OPEN_DISTRO.host}")
