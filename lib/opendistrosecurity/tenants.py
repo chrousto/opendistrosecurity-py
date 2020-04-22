@@ -96,7 +96,7 @@ class OpenDistroTenant(OpenDistroSecurityObject):
         OpenDistroTenant Abstract Object
     """
 
-    def __init__(self, d):
+    def __init__(self,  ):
         self._dict_ = d
         super().__init__()
 

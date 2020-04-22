@@ -1,6 +1,9 @@
 """
 Test / Example file for OpenDistro Secuity API
 """
+import os
+import sys
+sys.path.insert(0, os.path.abspath('../lib/opendistrosecurity'))
 
 from opendistrosecurity import *
 from tenants import *
@@ -31,4 +34,3 @@ tenants_client.delete_tenant(TEST_TENANT)
 print("Listing tenants :")
 tenants_dict = tenants_client.get_tenants()
 pprint(tenants_dict)
-
