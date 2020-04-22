@@ -77,12 +77,31 @@ class OpenDistroSecurityObjectClient(NamespacedClient):
         super().__init__(self)
 
 
-class OpenDistroSecurityObject:
+class OpenDistroSecurityObject(object):
+    
     """
         Generic Security Object class
     """
-    def __init__(self, d):
+
+    def __init__(self, d, allowed_keys):
         """
             Get attributes from json string
         """
-        self.__dict__ = d
+        self._object_dict = d
+        self.__allowed_keys = allowed_keys
+        self.__allowed_keys.sort()
+        if ( not self._validate()):
+            raise
+
+    def _validate(self):
+        """
+            This function vaidates that we have the correct keys to send
+            To OpenDistro for a specific Security Object
+            The list of allowed keys is gotten from the subclass
+        """
+        _object_keys_list = list(self._object_dict[ list(self._object_dict)[0] ])
+        _object_keys_list.sort()
+        if (len(self._object_dict) != 1):
+            return False
+        else: 
+            return True if self.__allowed_keys == _object_keys_list else False

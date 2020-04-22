@@ -1,11 +1,14 @@
 """
     This module allows to manipulate tenants !
 """
+import json
 from elasticsearch.client.utils import _make_path
 from opendistrosecurity import (OpenDistro,
                                 OpenDistroSecurityObject,
                                 OpenDistroSecurityObjectClient,
                                 logged)
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
 
 class TenantsClient(OpenDistroSecurityObjectClient):
     """
@@ -13,7 +16,6 @@ class TenantsClient(OpenDistroSecurityObjectClient):
     """
     _endpoint = "tenants"
 
-    @logged
     def get_tenants(self, params=None, headers=None):
         """
             This function retrieves tenants.
@@ -32,7 +34,6 @@ class TenantsClient(OpenDistroSecurityObjectClient):
             params=params,
             headers=headers)
 
-    @logged
     def get_tenant(self, tenant, params=None, headers=None):
         """
             Retrieves a specific tenant
@@ -51,7 +52,6 @@ class TenantsClient(OpenDistroSecurityObjectClient):
             params=params,
             headers=headers)
 
-    @logged
     def delete_tenant(self, tenant, params=None, headers=None):
         """
             Delete a specific tenant
@@ -71,11 +71,10 @@ class TenantsClient(OpenDistroSecurityObjectClient):
             params=params,
             headers=headers)
 
-    @logged
     def create_tenant(self, tenant, body="None", params=None, headers=None):
         """
-            Delete a specific tenant
-            :arg tenant: The name of the tenant to retrieve
+            Create a specific tenant
+            :arg tenant: The name of the tenant to create
             :arg params: Extra parametrs to pass the URL
             :arg headers: Extra Headers to pass to the request
         """
@@ -93,21 +92,55 @@ class TenantsClient(OpenDistroSecurityObjectClient):
 
 class OpenDistroTenant(OpenDistroSecurityObject):
     """
-        OpenDistroTenant Abstract Object
+        OpenDistroTenant
     """
 
-    def __init__(self,  ):
-        self._dict_ = d
-        super().__init__()
+    # TODO : improve the json validation with somehting like jsonschema lib
+    __allowed_keys = ["reserved","hidden","description","static"]
+
+    def __init__(self, d):
+        try:
+            super().__init__(d,self.__allowed_keys)
+
+        except:
+            raise Exception("Problem when creating tenant object")
+    
+    @property    
+    def name(self):
+        return list(self._object_dict)[0]
+
+    @name.setter
+    def name(self, name):
+        _old_name = list(self._object_dict)[0]
+        self._object_dict[name] = self._object_dict.pop( _old_name )
+
+    @property    
+    def description(self):
+        return self._object_dict[self.name]
+
+    @description.setter
+    def description(self, desc):
+        self._object_dict[self.name]["description"] = desc
+
+    @property    
+    def hidden(self):
+        return self._object_dict[self.name]
+
+    @hidden.setter
+    def hidden(self, desc):
+        self._object_dict[self.name]["hidden"] = desc
+    
+    @property    
+    def static(self):
+        return self._object_dict[self.name]
+
+    @static.setter
+    def static(self, desc):
+        self._object_dict[self.name]["hidden"] = desc
+
 
     def display(self):
         """
-            Display
+            Display with Pretty Printer
         """
-        print("Let's display "+self)
-
-    def hidden(self):
-        """
-            is hidden ?
-        """
-        print("Am I hidden ? "+self)
+        pp.pprint(self._object_dict)
