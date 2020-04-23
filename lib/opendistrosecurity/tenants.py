@@ -93,22 +93,19 @@ class TenantsClient(OpenDistroSecurityObjectClient):
 class OpenDistroTenant(OpenDistroSecurityObject):
     """
         OpenDistroTenant
+        Object to be manipulated
     """
 
     # TODO : improve the json validation with somehting like jsonschema lib
     __allowed_keys = ["reserved","hidden","description","static"]
 
-    def __init__(self,name,description,hidden,static,reserved):
+    def __init__(self,name,description,hidden=False,static=False,reserved=False):
         """
             Build a tenant in an OOP way
         """
         try:
             tenant_dict = {}
-            tenant_dict["name"] = { "description" : description, \
-                                    "hidden" : hidden, \
-                                    "static" : static, \
-                                    "reserved" : reserved \
-                                  }
+            tenant_dict[name] = { "description" : description,"hidden" : hidden,"static" : static,"reserved" : reserved }
 
             super().__init__(tenant_dict,self.__allowed_keys)
         except:
@@ -131,11 +128,11 @@ class OpenDistroTenant(OpenDistroSecurityObject):
     @name.setter
     def name(self, name):
         _old_name = list(self._object_dict)[0]
-        self._object_dict[name] = self._object_dict.pop( _old_name )
+        self._object_dict[name] = self._object_dict.pop(_old_name)
 
     @property    
     def description(self):
-        return self._object_dict[self.name]
+        return self._object_dict[self.name]["description"]
 
     @description.setter
     def description(self, desc):
@@ -143,30 +140,51 @@ class OpenDistroTenant(OpenDistroSecurityObject):
 
     @property    
     def hidden(self):
-        return self._object_dict[self.name]
-
-    @hidden.setter
-    def hidden(self, hidden):
-        self._object_dict[self.name]["hidden"] = hidden
+        return self._object_dict[self.name]["hidden"]
     
     @property    
     def static(self):
-        return self._object_dict[self.name]
-
-    @static.setter
-    def static(self,static):
-        self._object_dict[self.name]["statuc"] = static
+        return self._object_dict[self.name]["static"]
 
     @property    
     def reserved(self):
-        return self._object_dict[self.name]
+        return self._object_dict[self.name]["reserved"]
+    
 
-    @reserved.setter
-    def static(self, reserved):
-        self._object_dict[self.name]["reserved"] = reserved
+    # Functions for Creating and deleting
+    def save(self,tenant_client):
+        """
+            Save current tenant to an OpenDistro Server
+        """
+        if (not tenant_client.open_distro.check_connection()):
+            raise Error("Not connected to OpenDistro ...")
+        try:
+            tenant_client.create_tenant(tenant=self.name,
+                                        body={"description" : f"{self.description}"})
+        except Exception as e:
+            raise Error("Unable create tenant")
+            print(e)
+
+    def delete(self,tenant_client):
+        """
+            Delete current tenant from an OpenDistro Server
+        """
+        if (not tenant_client.open_distro.check_connection()):
+            raise Error("Not connected to OpenDistro ...")
+        try:
+            tenant_client.delete_tenant(tenant=self.name)
+        except Exception as e:
+            raise Error("Unable delete tenant")
+            print(e)
+
+    def upadte(self,tenant_client,description):
+        """
+            TODO
+        """
+        pass
 
     def display(self):
         """
-            Display with Pretty Printer
+            Pretty pring a tenant
         """
         pp.pprint(self._object_dict)
