@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.abspath(this_file_dir+'/../lib/opendistrosecurity'))
 
 from opendistrosecurity import *
 from tenants import *
+from roles import *
 import json
 from pprint import pprint
 
@@ -25,12 +26,15 @@ else:
     print(f"Problem with connecting to {od.host}:{od.port} with user {od.user}")
     exit(1)
 
+# TENANTS
 #Create a Tenant Client for direct lowlevel objects creations
 tenants_client = TenantsClient(od)
 test_tenant_name_lowlevel = "_test_tenant_lowlevel"
-test_tenant_name_highlevel = "_test_tenant_highwlevel"
+test_tenant_name_highlevel = "_test_tenant_highlevel"
 test_tenant_name_highlevel_updated = "_updated_test_tenant_highlevel"
 
+
+print(">>> TENANTS >>>")
 print(">>> Creating a tenant with the lowlevel methods")
 tenants_client.create_tenant(tenant=test_tenant_name_lowlevel,body='{"description":"This tenant was created for testing purpose with the lowlevel API"}')
 
@@ -69,3 +73,15 @@ else:
     print("     >>> Success : Not found any of ourtenants :)")
 print(">>> Print every tenant we find : ")
 pprint(tenants_dict.keys())
+
+# ROLES
+#Create a Role Client for direct lowlevel objects creations
+roles_client = RolesClient(od)
+test_role_name_lowlevel = "_test_role_lowlevel"
+test_role_name_highlevel = "_test_role_highlevel"
+test_role_name_highlevel_updated = "_updated_test_role_highlevel"
+print(">>> ROLES  >>>")
+print(">>> Creating a role with the lowlevel methods")
+roles_client.create_role(role=test_role_name_lowlevel,body='{"description":"This tenant was created for testing purpose with the lowlevel API"}')
+
+
