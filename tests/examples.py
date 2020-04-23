@@ -21,8 +21,25 @@ print(">>> Creating tenant from within the body")
 tenants_client.create_tenant(tenant=TEST_TENANT,body='{"description":"description test"}')
 
 print(">>> Creating tenant by building a Tenant Object")
-tenant_dict = { "Tenant Creatd with an object" : { "description":"Tenant Object description","hidden":False,"static":False,"reserved":False } }
-tenant_object = OpenDistroTenant(tenant_dict)
+tenant_dict = { "Tenant Creatd with an object" : 
+                { "description":"Tenant Object description",
+                    "hidden":False,
+                    "static":False,
+                    "reserved":False 
+                } 
+               }
+
+tenant_name = list(tenant_dict.keys())[0]
+tenant_description  = tenant_dict[tenant_name]["description"]
+tenant_static= tenant_dict[tenant_name]["static"]
+tenant_hidden = tenant_dict[tenant_name]["hidden"]
+tenant_reserved = tenant_dict[tenant_name]["reserved"]
+
+tenant_object = OpenDistroTenant(name=tenant_name,
+                                 description=tenant_description,
+                                 hidden=tenant_hidden,
+                                 static=tenant_static,
+                                 reserved=tenant_reserved)
 tenant_object.display()
 print(">>> Updating this tenant name")
 tenant_object.description = "Updated Tenant Description"
@@ -35,7 +52,8 @@ pprint(tenants_dict)
 
 print(f">>> Getting {TEST_TENANT}")
 tenant_dict = tenants_client.get_tenant(TEST_TENANT)
-tenant = OpenDistroTenant(tenant_dict)
+print(f"--------- {tenant_dict}")
+tenant = OpenDistroTenant.fromdict(tenant_dict)
 tenant.display()
 
 

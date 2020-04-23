@@ -98,13 +98,32 @@ class OpenDistroTenant(OpenDistroSecurityObject):
     # TODO : improve the json validation with somehting like jsonschema lib
     __allowed_keys = ["reserved","hidden","description","static"]
 
-    def __init__(self, d):
+    def __init__(self,name,description,hidden,static,reserved):
+        """
+            Build a tenant in an OOP way
+        """
         try:
-            super().__init__(d,self.__allowed_keys)
+            tenant_dict = {}
+            tenant_dict["name"] = { "description" : description, \
+                                    "hidden" : hidden, \
+                                    "static" : static, \
+                                    "reserved" : reserved \
+                                  }
 
+            super().__init__(tenant_dict,self.__allowed_keys)
         except:
-            raise Exception("Problem when creating tenant object")
-    
+            raise ValueError("Problem when creating tenant object")
+
+    @classmethod
+    def fromdict(cls,tenant_dict):
+        # Here we cheat because we know the json is of the following form:
+        # { 'tenant_name': {'description' : "desc", ... } }
+        # And we need name=...,desc=... for the init function
+        tenant_name = next(iter(tenant_dict))
+        tenant_properties = tenant_dict[tenant_name]
+
+        return cls(name = tenant_name , **tenant_properties )
+
     @property    
     def name(self):
         return list(self._object_dict)[0]
@@ -127,17 +146,24 @@ class OpenDistroTenant(OpenDistroSecurityObject):
         return self._object_dict[self.name]
 
     @hidden.setter
-    def hidden(self, desc):
-        self._object_dict[self.name]["hidden"] = desc
+    def hidden(self, hidden):
+        self._object_dict[self.name]["hidden"] = hidden
     
     @property    
     def static(self):
         return self._object_dict[self.name]
 
     @static.setter
-    def static(self, desc):
-        self._object_dict[self.name]["hidden"] = desc
+    def static(self,static):
+        self._object_dict[self.name]["statuc"] = static
 
+    @property    
+    def reserved(self):
+        return self._object_dict[self.name]
+
+    @reserved.setter
+    def static(self, reserved):
+        self._object_dict[self.name]["reserved"] = reserved
 
     def display(self):
         """

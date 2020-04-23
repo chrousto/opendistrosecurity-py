@@ -76,13 +76,11 @@ class OpenDistroSecurityObjectClient(NamespacedClient):
         self.open_distro = open_distro
         super().__init__(self)
 
-
 class OpenDistroSecurityObject(object):
     
     """
         Generic Security Object class
     """
-
     def __init__(self, d, allowed_keys):
         """
             Get attributes from json string
@@ -103,5 +101,5 @@ class OpenDistroSecurityObject(object):
         _object_keys_list.sort()
         if (len(self._object_dict) != 1):
             return False
-        else: 
+        else:
             return True if self.__allowed_keys == _object_keys_list else False
