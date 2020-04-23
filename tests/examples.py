@@ -4,7 +4,8 @@ TODO : Implement with unittest
 """
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../lib/opendistrosecurity'))
+this_file_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.abspath(this_file_dir+'/../lib/opendistrosecurity'))
 
 from opendistrosecurity import *
 from tenants import *
