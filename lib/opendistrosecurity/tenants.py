@@ -105,7 +105,10 @@ class OpenDistroTenant(OpenDistroSecurityObject):
         """
         try:
             tenant_dict = {}
-            tenant_dict[name] = { "description" : description,"hidden" : hidden,"static" : static,"reserved" : reserved }
+            tenant_dict[name] = {"description" : description,
+                                 "hidden" : hidden,
+                                 "static" : static,
+                                "reserved" : reserved}
 
             super().__init__(tenant_dict,self.__allowed_keys)
         except:
@@ -113,7 +116,7 @@ class OpenDistroTenant(OpenDistroSecurityObject):
 
     @classmethod
     def fromdict(cls,tenant_dict):
-        # Here we cheat because we know the json is of the following form:
+        # Here we are cheating because we know the json is of the following form:
         # { 'tenant_name': {'description' : "desc", ... } }
         # And we need name=...,desc=... for the init function
         tenant_name = next(iter(tenant_dict))
