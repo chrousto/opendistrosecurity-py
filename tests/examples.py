@@ -33,7 +33,6 @@ else:
 #test_tenant_name_highlevel = "_test_tenant_highlevel"
 #test_tenant_name_highlevel_updated = "_updated_test_tenant_highlevel"
 #
-#
 #print(">>> TENANTS >>>")
 #print(">>> Creating a tenant with the lowlevel methods")
 #tenants_client.create_tenant(tenant=test_tenant_name_lowlevel,body='{"description":"This tenant was created for testing purpose with the lowlevel API"}')
@@ -119,3 +118,6 @@ print(">>> Creating a role with the low level methods")
 roles_client.create_role(role=test_role_name_lowlevel,body='{"description":"This tenant was created for testing purpose with the lowlevel API"}')
 print(">>> Creating a role with the high level methods")
 r.save(roles_client)
+r.delete(roles_client)
+
+
