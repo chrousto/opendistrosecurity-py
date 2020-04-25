@@ -184,7 +184,7 @@ class OpenDistroRole(OpenDistroSecurityObject):
             raise ValueError("Unable create role")
             print(e)
 
-    def delete(self,rolet_client):
+    def delete(self,role_client):
         """
             Delete current tenant from an OpenDistro Server
         """
