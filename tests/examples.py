@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.abspath(this_file_dir+'/../lib/opendistrosecurity'))
 from opendistrosecurity import *
 from tenants import *
 from roles import *
+from rolesmapping import *
 import json
 from pprint import pprint
 
@@ -77,47 +78,54 @@ else:
 
 # ROLES
 #Create a Role Client for direct lowlevel objects creations
-roles_client = RolesClient(od)
-test_role_name_lowlevel = "_test_role_lowlevel"
-test_role_name_highlevel = "_test_role_highlevel"
-test_role_name_highlevel_updated = "_updated_test_role_highlevel"
+#roles_client = RolesClient(od)
+#test_role_name_lowlevel = "_test_role_lowlevel"
+#test_role_name_highlevel = "_test_role_highlevel"
+#test_role_name_highlevel_updated = "_updated_test_role_highlevel"
+#
+#index_permission1 = IndexPermission()
+#index_permission1.addindexpattern("index1.1*")
+#index_permission1.addindexpattern("index1.2*")
+#index_permission1.addindexpattern("index1.3*")
+#index_permission1.adddls('{"term" : {"field1.1":"true"}}')
+#index_permission1.addfls("~filter_me")
+#index_permission1.addmaskedfield("mask_me")
+#index_permission1.removeindexpattern("index1.3*")
+#index_permission1.addallowedaction("allowed_action1");
+#
+#index_permission2 = IndexPermission()
+#index_permission2.addindexpattern("index2.1*")
+#index_permission2.addindexpattern("index2.2*")
+#index_permission2.addindexpattern("index2.3*")
+#index_permission2.adddls('{"term" : {"field2.1":"true"}}')
+#index_permission2.addfls("~filter_me")
+#index_permission2.addmaskedfield("mask_me")
+#index_permission2.removeindexpattern("index2.3*")
+#index_permission2.addallowedaction("allowed_action2");
+#
+#tenant_permission1 = TenantPermission()
+#tenant_permission1.addtenantpattern("tenant1*")
+#tenant_permission1.addtenantpattern("tenant2*")
+#tenant_permission1.addtenantpattern("tenant3*")
+#tenant_permission1.addallowedaction("allowed_action1")
+#
+#r = OpenDistroRole(name=test_role_name_highlevel,
+#                   index_permissions=[index_permission1 , index_permission2],
+#                   tenant_permissions=[tenant_permission1]
+#                   )
+#
+#print(">>> ROLES  >>>")
+#print(">>> Creating a role with the low level methods")
+#roles_client.create_role(role=test_role_name_lowlevel,body='{"description":"This tenant was created for testing purpose with the lowlevel API"}')
+#print(">>> Creating a role with the high level methods")
+#r.save(roles_client)
+#r.delete(roles_client)
 
-index_permission1 = IndexPermission()
-index_permission1.addindexpattern("index1.1*")
-index_permission1.addindexpattern("index1.2*")
-index_permission1.addindexpattern("index1.3*")
-index_permission1.adddls('{"term" : {"field1.1":"true"}}')
-index_permission1.addfls("~filter_me")
-index_permission1.addmaskedfield("mask_me")
-index_permission1.removeindexpattern("index1.3*")
-index_permission1.addallowedaction("allowed_action1");
-
-index_permission2 = IndexPermission()
-index_permission2.addindexpattern("index2.1*")
-index_permission2.addindexpattern("index2.2*")
-index_permission2.addindexpattern("index2.3*")
-index_permission2.adddls('{"term" : {"field2.1":"true"}}')
-index_permission2.addfls("~filter_me")
-index_permission2.addmaskedfield("mask_me")
-index_permission2.removeindexpattern("index2.3*")
-index_permission2.addallowedaction("allowed_action2");
-
-tenant_permission1 = TenantPermission()
-tenant_permission1.addtenantpattern("tenant1*")
-tenant_permission1.addtenantpattern("tenant2*")
-tenant_permission1.addtenantpattern("tenant3*")
-tenant_permission1.addallowedaction("allowed_action1")
-
-r = OpenDistroRole(name=test_role_name_highlevel,
-                   index_permissions=[index_permission1 , index_permission2],
-                   tenant_permissions=[tenant_permission1]
-                   )
-
-print(">>> ROLES  >>>")
-print(">>> Creating a role with the low level methods")
-roles_client.create_role(role=test_role_name_lowlevel,body='{"description":"This tenant was created for testing purpose with the lowlevel API"}')
-print(">>> Creating a role with the high level methods")
-r.save(roles_client)
-r.delete(roles_client)
-
-
+rolesmapping_client = RolesMappingClient(od)
+rm = rolesmapping_client.get_rolesmappings()
+rm = OpenDistroRoleMapping(role_name="tests")
+print(rm.__dict__)
+rm.adduser("plop")
+rm.addbackendrole("ohyeah")
+rm.addhost("host")
+rm.save(rolesmapping_client)
