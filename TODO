@@ -1,0 +1,7 @@
+* Proper Exception Handling 
+	> Check all the get / create / delete methods from the *Client classes
+	> Check those exceptions also in the tests.py file
+* Proper logging throughout the API
+* Proper Doc
+* Proper Tests with unittest
+* Proper response handling

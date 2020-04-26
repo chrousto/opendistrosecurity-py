@@ -1,0 +1,5 @@
+* Proper Exception Handling
+* Proper logging throughout the API
+* Proper Doc
+* Proper Tests with unittest
+* Proper response handling

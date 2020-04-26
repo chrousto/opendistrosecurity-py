@@ -88,8 +88,9 @@ class OpenDistroSecurityObject(object):
         self._object_dict = d
         self.__allowed_keys = allowed_keys
         self.__allowed_keys.sort()
+        
         if ( not self._validate()):
-            raise
+            raise ValueError(f"Unable to create this Object of type {type(self)} with these values : {d}")
 
     def _validate(self):
         """
@@ -97,6 +98,7 @@ class OpenDistroSecurityObject(object):
             To OpenDistro for a specific Security Object
             The list of allowed keys is gotten from the subclass
         """
+
         _object_keys_list = list(self._object_dict[ list(self._object_dict)[0] ])
         _object_keys_list.sort()
         if (len(self._object_dict) != 1):

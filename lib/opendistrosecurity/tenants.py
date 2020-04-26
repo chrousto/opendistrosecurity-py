@@ -2,6 +2,7 @@
     This module allows to manipulate tenants !
 """
 import json
+from elasticsearch import ElasticsearchException
 from elasticsearch.client.utils import _make_path
 from opendistrosecurity import (OpenDistro,
                                 OpenDistroSecurityObject,
@@ -25,14 +26,17 @@ class TenantsClient(OpenDistroSecurityObjectClient):
             :arg headers: Extra Headers to pass to the request
         """
         _method = "GET"
-
-        return self.open_distro.elastic_search.transport.perform_request(
-            _method,
-            _make_path(
-                *OpenDistro.opendistro_path.split("/"),
-                self._endpoint),
-            params=params,
-            headers=headers)
+        
+        try:
+            return self.open_distro.elastic_search.transport.perform_request(
+                                                                _method,
+                                                                _make_path(
+                                            *OpenDistro.opendistro_path.split("/"),
+                                                                self._endpoint),
+                                                                params=params,
+                                                                headers=headers)
+        except ElasticsearchException:
+            raise
 
     def get_tenant(self, tenant, params=None, headers=None):
         """
@@ -79,16 +83,18 @@ class TenantsClient(OpenDistroSecurityObjectClient):
             :arg headers: Extra Headers to pass to the request
         """
         _method = "PUT"
-
-        return self.open_distro.elastic_search.transport.perform_request(
-            _method,
-            _make_path(
-                *OpenDistro.opendistro_path.split("/"),
-                self._endpoint,
-                tenant),
-            params=params,
-            headers=headers,
-            body=body)
+        try:
+            return self.open_distro.elastic_search.transport.perform_request(
+                                                            _method,
+                                                            _make_path(
+                                        *OpenDistro.opendistro_path.split("/"),
+                                                            self._endpoint,
+                                                            tenant),
+                                                            params=params,
+                                                            headers=headers,
+                                                            body=body)
+        except ElasticsearchException:
+            raise
 
 class OpenDistroTenant(OpenDistroSecurityObject):
     """
@@ -105,7 +111,10 @@ class OpenDistroTenant(OpenDistroSecurityObject):
         """
         try:
             tenant_dict = {}
-            tenant_dict[name] = { "description" : description,"hidden" : hidden,"static" : static,"reserved" : reserved }
+            tenant_dict[name] = {"description" : description,
+                                 "hidden" : hidden,
+                                 "static" : static,
+                                "reserved" : reserved}
 
             super().__init__(tenant_dict,self.__allowed_keys)
         except:
@@ -113,7 +122,7 @@ class OpenDistroTenant(OpenDistroSecurityObject):
 
     @classmethod
     def fromdict(cls,tenant_dict):
-        # Here we cheat because we know the json is of the following form:
+        # Here we are cheating because we know the json is of the following form:
         # { 'tenant_name': {'description' : "desc", ... } }
         # And we need name=...,desc=... for the init function
         tenant_name = next(iter(tenant_dict))
