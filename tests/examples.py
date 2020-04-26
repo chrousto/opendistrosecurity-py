@@ -14,11 +14,34 @@ from rolesmapping import *
 import json
 from pprint import pprint
 
+## Get Env vars
+ODHOST = os.environ.get('ODHOST')
+ODPORT= os.environ.get('ODPORT')
+ODUSER = os.environ.get('ODUSER')
+ODPWD = os.environ.get('ODPWD')
+
+# If nothing, ask
+if(ODHOST is None):
+    print("OpenDistro Address : ")
+    ODHOST = input()
+
+if(ODPORT is None):
+    print("OpenDistro Port : ")
+    ODPORT = input()
+
+if(ODUSER is None):
+    print("OpenDistro User : ")
+    ODUSER = input()
+
+if(ODPWD is None):
+    print("OpenDistro Password : ")
+    ODPWD = input()
+
 #Create OpenDistro Connection
-od = OpenDistro(host="elastique-cherche.chazeau.org",
-                port=443 ,
-                user="admin", 
-                pwd="admin")
+od = OpenDistro(host=ODHOST,
+                port=ODPORT,
+                user=ODUSER, 
+                pwd=ODPWD)
 
 #Check the connection
 if (od.check_connection()):
@@ -109,14 +132,18 @@ tenant_permission1.addtenantpattern("tenant2*")
 tenant_permission1.addtenantpattern("tenant3*")
 tenant_permission1.addallowedaction("allowed_action1")
 
+
+
 r = OpenDistroRole(name=test_role_name_highlevel,
                    index_permissions=[index_permission1 , index_permission2],
                    tenant_permissions=[tenant_permission1]
                    )
 
+print(r._object_dict)
+
 print(">>> ROLES  >>>")
 print(">>> Creating a role with the low level methods")
-roles_client.create_role(role=test_role_name_lowlevel,body='{"description":"This tenant was created for testing purpose with the lowlevel API"}')
+roles_client.create_role(role=test_role_name_lowlevel,body='{"description":"This role was created for testing purpose with the lowlevel API"}')
 print(">>> Creating a role with the high level methods")
 r.save(roles_client)
 r.delete(roles_client)

@@ -11,35 +11,51 @@ sys.path.insert(0, os.path.abspath(this_file_dir+'/../lib/opendistrosecurity'))
 from elasticsearch import NotFoundError
 from opendistrosecurity import OpenDistro
 from tenants import TenantsClient
-from roles import RolesClient
+from roles import RolesClient, OpenDistroRole, IndexPermission, TenantPermission
 import roles
 import rolesmapping 
 import unittest
 import sys
 
-HOST = "elastique-cherche.chazeau.org"
-PORT = 443
-USER = "admin"
-PWD = "admin"
-OPEN_DISTRO =  OPEN_DISTRO = OpenDistro(host=HOST,
-                                             port=PORT ,
-                                            user=USER, 
-                                            pwd=PWD)
+## Get Env vars
+ODHOST = os.environ.get('ODHOST')
+ODPORT= os.environ.get('ODPORT')
+ODUSER = os.environ.get('ODUSER')
+ODPWD = os.environ.get('ODPWD')
+
+# If nothing, ask
+if(ODHOST is None):
+    print("OpenDistro Address : ")
+    ODHOST = input()
+
+if(ODPORT is None):
+    print("OpenDistro Port : ")
+    ODPORT = input()
+
+if(ODUSER is None):
+    print("OpenDistro User : ")
+    ODUSER = input()
+
+if(ODPWD is None):
+    print("OpenDistro Password : ")
+    ODPWD = input()
+
+OPEN_DISTRO =  OPEN_DISTRO = OpenDistro(host=ODHOST,
+                                        port=ODPORT ,
+                                        user=ODUSER, 
+                                        pwd=ODPWD)
+#Check the connection
+if (OPEN_DISTRO.check_connection()):
+    print(f"\n--> We are able to reach {OPEN_DISTRO.host}")
+
+else:
+    print(f"Error : impossible to connectot to {ODHOST}:{ODPORT} with user {ODUSER}")
 
 class TestTenants(unittest.TestCase):
  
-    def setUp(self):
-
-        #Check the connection
-        if (OPEN_DISTRO.check_connection()):
-            print(f"\n--> We are (still) able to reach {OPEN_DISTRO.host}")
-
-            self.tenants_client = TenantsClient(OPEN_DISTRO)
-        else:
-            print(f"Not connected to {OPEN_DISTRO.host}")
-            raise Exception(f"Unable to connect to OpenDistro {OPEN_DISTRO.host}") 
-
-        print(f"Now testing : {self._testMethodName}")
+    def setUp(self):    
+        self.tenants_client = TenantsClient(OPEN_DISTRO)
+        print(f"\nNow testing : {self._testMethodName}, result : ",end='')
 
     def test_gettenants(self):
         tenants = self.tenants_client.get_tenants()
@@ -85,24 +101,111 @@ class TestTenants(unittest.TestCase):
 class TestRoles(unittest.TestCase):
 
     def setUp(self):
-        #Create OpenDistro Connection
-        OPEN_DISTRO = OpenDistro(host=HOST,
-                                      port=PORT,
-                                      user=USER, 
-                                      pwd=PWD)
-
-        #Check the connection
-        if (OPEN_DISTRO.check_connection()):
-            print(f"--> We are (still) connected to {OPEN_DISTRO.host}")
-            self.roles_client = RolesClient(OPEN_DISTRO)
-        else:
-            print(f"Not connected to {OPEN_DISTRO.host}")
-            raise Exception(f"Unable to connect to OpenDistro {OPEN_DISTRO.host}") 
+        self.roles_client = RolesClient(OPEN_DISTRO)
+        print(f"\nNow testing : {self._testMethodName}, result : ",end='')
+        
     
     def test_getroles(self):
         roles = self.roles_client.get_roles()
         self.assertNotEqual(len(roles), 0)        
         self.assertIsInstance(roles, dict) 
+    
+    def test_create_and_delete_roles_low(self):
+        """
+            Here the goal is to create a role ind ensure we get it back
+            exactly as we had sent it
+            AfterWards, we delete it and check it's been deleted
+     
+            This could be improved by sending the object with the API
+            and getting it back via curl for instance
+
+            These tests use the 'Low Level' API that uses built-in python objects 
+        """
+        #Create a tenant
+        _test_role_name_request = "_test_role"
+        _test_role_description_request = "_test_role_description"
+        _body = {
+                    "description" : _test_role_description_request,
+                    "tenant_permissions" : [
+                                            {
+                                             "tenant_patterns" : ["tenant1", "tenant2"],
+                                             "allowed_actions" : ["kibana_read"]
+                                            }
+                                           ],
+                    "index_permissions" : [ 
+                                            {
+                                             "index_patterns" : ["index1", "index2"],
+                                             "dls" : "{\"_id\":\"example\"",
+                                             "fls" : ["~field1", "~field2"],
+                                             "masked_fields" : ["field3", "field4"],
+                                             "allowed_actions" : ["crud", "example1"]
+                                            }
+                                          ]
+                }
+
+        #Send it to opendistro
+        self.roles_client.create_role(role=_test_role_name_request,
+                                          body=_body)
+
+        #Get it back and test what we have
+        _response_role = self.roles_client.get_role(_test_role_name_request)
+        _requested_role = { _test_role_name_request : _body }
+        _response_role_params = _response_role[_test_role_name_request]       
+        _requested_role_params = _requested_role[_test_role_name_request]       
+ 
+        self.assertEqual(_requested_role_params["description"], 
+                         _response_role_params["description"])
+        self.assertEqual(_requested_role_params["index_permissions"], 
+                         _response_role_params["index_permissions"])
+        self.assertEqual(_requested_role_params["tenant_permissions"], 
+                         _response_role_params["tenant_permissions"])
+        
+        #Delete it 
+        self.roles_client.delete_role(_test_role_name_request)
+        
+        #Get it back and ensure we have nothing
+        with self.assertRaises(NotFoundError):
+            role = self.roles_client.get_role(_test_role_name_request)
+
+    def test_create_and_delete_roles_high(self):
+        
+        #Create role        
+        _test_role_name_request = "_test_role"
+        role_request = OpenDistroRole(_test_role_name_request)
+        index_permission1 = IndexPermission()
+        index_permission1.addindexpattern("index1*")
+        index_permission1.adddls('{"term" : {"field1.1":"true"}}')
+        index_permission1.addfls("~filter_me")
+        index_permission1.addmaskedfield("mask_me")
+        index_permission1.addallowedaction("allowed_action1");
+        
+        index_permission2 = IndexPermission()
+        index_permission2.addindexpattern("index2.1*")
+        index_permission2.addindexpattern("index2.2*")
+        index_permission2.addindexpattern("index2.3*")
+        index_permission2.adddls('{"term" : {"field2.1":"true"}}')
+        index_permission2.addfls("~filter_me")
+        index_permission2.addmaskedfield("mask_me")
+        index_permission2.addallowedaction("allowed_action2");
+
+        tenant_permission1 = TenantPermission()
+        tenant_permission1.addtenantpattern("tenant1*")
+        tenant_permission1.addtenantpattern("tenant2*")
+        tenant_permission1.addtenantpattern("tenant3*")
+        tenant_permission1.addallowedaction("allowed_action1")
+
+        role_request.addindexpermission(index_permission1)
+        role_request.addindexpermission(index_permission2)
+        role_request.addtenantpermission(tenant_permission1)
+        
+        #Save Role to OpenDistro
+        role_request.save(self.roles_client)
+        
+        #Retrieve Role and validate the fromdict method
+        role_response = OpenDistroRole.fromdict(self.roles_client.get_role(role_request.name))
+        
+        # Verify some things
+        self.assertEqual(role_request.name,role_response.name)
 
 if __name__ == '__main__':
     unittest.main()

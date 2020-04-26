@@ -97,7 +97,8 @@ class OpenDistroRole(OpenDistroSecurityObject):
     """
 
     # TODO : improve the json validation with somehting like jsonschema lib
-    __allowed_keys = ["reserved",
+    __allowed_keys = ["description",
+                     "reserved",
                      "hidden",
                      "static",
                      "index_permissions",
@@ -109,6 +110,7 @@ class OpenDistroRole(OpenDistroSecurityObject):
                 index_permissions=None,
                 cluster_permissions=None,
                 tenant_permissions=None,
+                description=None,
                 hidden=False,
                 static=False,
                 reserved=False):
@@ -116,8 +118,13 @@ class OpenDistroRole(OpenDistroSecurityObject):
             Build a role in an OOP way
         """
         try:
+
+            tenant_permissions = [] if tenant_permissions is None else tenant_permissions
+            index_permissions = [] if index_permissions is None else index_permissions
+            
             role_dict = {}
-            role_dict[name] = { "index_permissions" : index_permissions,
+            role_dict[name] = { "description" : description,
+                                "index_permissions" : index_permissions,
                                 "cluster_permissions" : cluster_permissions,
                                 "tenant_permissions" : tenant_permissions,
                                 "hidden" : hidden,
@@ -134,6 +141,7 @@ class OpenDistroRole(OpenDistroSecurityObject):
         # { 'role_name': {'index_permissions' : [ ... , ... ] , ... } }
         role_name = next(iter(role_dict))
         role_properties = role_dict[role_name]
+        
         return cls(name = role_name , **role_properties )
 
     @property    
@@ -144,6 +152,14 @@ class OpenDistroRole(OpenDistroSecurityObject):
     def name(self, name):
         _old_name = list(self._object_dict)[0]
         self._object_dict[name] = self._object_dict.pop(_old_name)
+    
+    @property    
+    def description(self):
+        return self._object_dict[self.name]["description"]
+
+    @description.setter
+    def description(self, description):
+        self._object_dict[self.name]["description"] = description 
 
     @property    
     def index_permissions(self):
@@ -161,28 +177,37 @@ class OpenDistroRole(OpenDistroSecurityObject):
     def tenant_permissions(self, tenant_permissions):
         self._object_dict[self.name]["tenant_permissions"] = tenant_permissions
 
+    def addindexpermission(self,index_permission):
+        #TODO : Validate what we get 
+        self.index_permissions.append(index_permission)
+
+    def addtenantpermission(self,index_permission):
+        #TODO : Validate what we get 
+        self.tenant_permissions.append(index_permission)
+
     # Functions for creating and deleting
     def save(self,role_client):
         """
             Save current tenant to an OpenDistro Server
         """
         if (not role_client.open_distro.check_connection()):
-            raise Error("Not connected to OpenDistro ...")
+            raise Error("OpenDistro is not reachable...")
         try:
-       
+            
             index_permissions_list = [ permission.forserialization() for 
                                 permission in self.index_permissions ] 
            
             tenant_permissions_list = [ permission.forserialization() for
                                 permission in self.tenant_permissions ]
 
+        
             role_client.create_role(role=self.name,
                     body={"index_permissions" : index_permissions_list,
                           "tenant_permissions" : tenant_permissions_list} )
         
         except Exception as e:
-            raise ValueError("Unable create role")
             print(e)
+            raise ValueError("Unable create role")
 
     def delete(self,role_client):
         """
@@ -260,9 +285,10 @@ class TenantPermission(object):
             so that we can pass this to ElasticSearch's API for
             json serialization
         """
-        return {"tenant_patterns" : self.tenant_patterns,
+        return {
+                "tenant_patterns" : self.tenant_patterns,
                 "allowed_actions" : self.allowed_actions
-                }
+               }
 
 class IndexPermission():
     """
@@ -374,9 +400,10 @@ class IndexPermission():
             so that we can pass this to ElasticSearch's API for
             json serialization
         """
-        return {"index_patterns" : self.index_patterns,
+        return {
+                "index_patterns" : self.index_patterns,
                 "dls" : self.dls,
                 "fls" : self.fls,
                 "masked_fields": self.masked_fields,
                 "allowed_actions" : self.allowed_actions
-                }
+               }
