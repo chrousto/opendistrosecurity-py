@@ -1,5 +1,5 @@
 """
-    This module allows to manipulate Roles !
+    This module allows Roles manipulation
 """
 import json
 from elasticsearch.client.utils import _make_path

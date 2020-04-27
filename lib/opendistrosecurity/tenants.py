@@ -1,5 +1,5 @@
 """
-    This module allows to manipulate tenants !
+    This module allows Tenants manipulation
 """
 import json
 from elasticsearch import ElasticsearchException

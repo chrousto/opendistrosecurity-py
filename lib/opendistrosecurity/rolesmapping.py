@@ -1,5 +1,5 @@
 """
-    This module allows to manipulate Roles !
+    This module allows RolesMapping manipulation
 """
 import json
 from elasticsearch.client.utils import _make_path
@@ -14,7 +14,6 @@ class RolesMappingClient(OpenDistroSecurityObjectClient):
     """
         Client Class that inherits from the generic client
     """
-    _endpoint = "rolesmapping"
 
     def get_rolesmappings(self, params=None, headers=None):
         """
