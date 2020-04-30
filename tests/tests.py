@@ -4,6 +4,8 @@ Test cases for the OpenDistro API
 """
 import os
 import sys
+import getpass
+
 # Setup the path to the API
 this_file_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.abspath(this_file_dir+'/../lib/opendistrosecurity'))
@@ -37,8 +39,7 @@ if(ODUSER is None):
     ODUSER = input()
 
 if(ODPWD is None):
-    print("OpenDistro Password : ")
-    ODPWD = input()
+    ODPWD = getpass.getpass("OpenDistro Password : ") 
 
 OPEN_DISTRO =  OPEN_DISTRO = OpenDistro(host=ODHOST,
                                         port=ODPORT ,

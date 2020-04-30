@@ -4,7 +4,6 @@
 """
 from functools import wraps
 import logging
-import requests
 from elasticsearch.client.utils import NamespacedClient
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import AuthenticationException, TransportError
