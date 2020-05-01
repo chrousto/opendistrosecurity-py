@@ -3,8 +3,7 @@
 """
 import json
 from elasticsearch.client.utils import _make_path
-from opendistrosecurity import (OpenDistro,
-                                OpenDistroSecurityObject,
+from opendistrosecurity import (OpenDistroSecurityObject,
                                 OpenDistroSecurityObjectClient,
                                 logged)
 import pprint

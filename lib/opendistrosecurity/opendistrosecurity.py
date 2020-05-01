@@ -7,7 +7,7 @@ import logging
 from elasticsearch.client.utils import NamespacedClient
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import AuthenticationException, TransportError
-
+from elasticsearch.serializer import JSONSerializer
 LOGGER = logging.getLogger(__name__)
 
 def logged(func):
@@ -105,4 +105,30 @@ class OpenDistroSecurityObject(object):
         if (len(self._object_dict) != 1):
             return False
         else:
-            return True if self.__allowed_keys == _object_keys_list else False
+            return self.__allowed_keys == _object_keys_list
+
+    # Class used to serialize our Various OpenDistro objects and sub-objects
+    # We'll see if we use that ...
+    # It causes trouble with imports : opendistro imports roles that imports opendistro
+    #class Encoder(JSONSerializer):
+    #    def default(self, obj):
+    #        if(isinstance(obj,IndexPermission)):
+    #            return {
+    #                "index_patterns" : obj.index_patterns,
+    #                "dls" : obj.dls,
+    #                "fls" : obj.fls,
+    #                "masked_fields": obj.masked_fields,
+    #                "allowed_actions" : obj.allowed_actions
+    #               }
+
+    #        if(isinstance(obj,TenantPermission)):
+    #            return {
+    #                    "tenant_patterns" : obj.tenant_patterns,
+    #                    "allowed_actions" : obj.allowed_actions
+    #                   }
+
+
+class OpenDistroSecurityException(Exception):
+    """
+        Base Exception Class
+    """

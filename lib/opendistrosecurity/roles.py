@@ -6,9 +6,21 @@ from elasticsearch.client.utils import _make_path
 from opendistrosecurity import (OpenDistro,
                                 OpenDistroSecurityObject,
                                 OpenDistroSecurityObjectClient,
-                                logged)
+                                logged,
+                                OpenDistroSecurityException)
+from permissions import CLUSTER_PERMISSIONS, INDEX_PERMISSIONS
+
+
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
+
+class OpenDistroRoleError(OpenDistroSecurityException):
+    def __init__(self,name):
+        """ 
+            Generic Error for the role class
+            Will have to be implemented in detail
+        """
+        OpenDistroSecurityException.__init__(self,f"Error with role : {name}")
 
 class RolesClient(OpenDistroSecurityObjectClient):
     """
@@ -97,8 +109,7 @@ class OpenDistroRole(OpenDistroSecurityObject):
     """
 
     # TODO : improve the json validation with somehting like jsonschema lib
-    __allowed_keys = ["description",
-                     "reserved",
+    __allowed_keys = ["reserved",
                      "hidden",
                      "static",
                      "index_permissions",
@@ -123,13 +134,14 @@ class OpenDistroRole(OpenDistroSecurityObject):
             index_permissions = [] if index_permissions is None else index_permissions
             
             role_dict = {}
-            role_dict[name] = { "description" : description,
+            role_dict[name] = { 
                                 "index_permissions" : index_permissions,
                                 "cluster_permissions" : cluster_permissions,
                                 "tenant_permissions" : tenant_permissions,
                                 "hidden" : hidden,
                                 "static" : static,
-                                "reserved" :reserved}
+                                "reserved" :reserved
+                              }
 
             super().__init__(role_dict,self.__allowed_keys)
         except:
@@ -139,10 +151,48 @@ class OpenDistroRole(OpenDistroSecurityObject):
     def fromdict(cls,role_dict):
         # Here we are cheating because we know the json is of the following form:
         # { 'role_name': {'index_permissions' : [ ... , ... ] , ... } }
-        role_name = next(iter(role_dict))
-        role_properties = role_dict[role_name]
-        
-        return cls(name = role_name , **role_properties )
+        _role_name = next(iter(role_dict))
+        _role_properties = role_dict[_role_name]
+
+        try:
+           
+            _index_permissions = _role_properties["index_permissions"]
+            _cluster_permissions = _role_properties["cluster_permissions"]  
+            _tenant_permissions = _role_properties["tenant_permissions"]  
+            _hidden = _role_properties["hidden"]  
+            _static = _role_properties["static"]  
+            _reserved = _role_properties["reserved"]  
+
+            
+            _index_permissions_object_list = []
+            for ip in _index_permissions:
+                _index_permissions_object_list.append(
+                    IndexPermission(
+                        index_patterns=ip["index_patterns"],
+                        dls=ip["dls"],
+                        fls=ip["fls"],
+                        masked_fields=["masked_fields"])
+                )
+            
+            _tenant_permissions_object_list = [] 
+            for tp in _tenant_permissions:
+                _tenant_permissions_object_list.append(
+                    TenantPermission(
+                        tenant_patterns=tp["tenant_patterns"],
+                        allowed_actions=tp["allowed_actions"])
+                )
+       
+            return cls(name=_role_name,
+                       static=_static,
+                       hidden=_hidden,
+                       reserved=_reserved,
+                       cluster_permissions=_cluster_permissions,
+                       tenant_permissions=_tenant_permissions_object_list,
+                       index_permissions=_index_permissions_object_list )
+        except Exception as e:
+            print(e)
+            raise OpenDistroRoleError(f"Was not able to build role {_role_name} from a dictionnary")
+ 
 
     @property    
     def name(self):
@@ -176,6 +226,14 @@ class OpenDistroRole(OpenDistroSecurityObject):
     @tenant_permissions.setter
     def tenant_permissions(self, tenant_permissions):
         self._object_dict[self.name]["tenant_permissions"] = tenant_permissions
+    
+    @property    
+    def cluster_permissions(self):
+        return self._object_dict[self.name]["cluster_permissions"]
+
+    @cluster_permissions.setter
+    def cluster_permissions(self,cluster_permissions):
+        self._object_dict[self.name]["cluster_permissions"] = cluster_permissions
 
     def addindexpermission(self,index_permission):
         #TODO : Validate what we get 
@@ -194,10 +252,10 @@ class OpenDistroRole(OpenDistroSecurityObject):
             raise Error("OpenDistro is not reachable...")
         try:
             
-            index_permissions_list = [ permission.forserialization() for 
+            index_permissions_list = [ permission.tojson() for 
                                 permission in self.index_permissions ] 
            
-            tenant_permissions_list = [ permission.forserialization() for
+            tenant_permissions_list = [ permission.tojson() for
                                 permission in self.tenant_permissions ]
 
         
@@ -234,7 +292,8 @@ class OpenDistroRole(OpenDistroSecurityObject):
         pp.pprint(self._object_dict)
     
     def __repr__(self):
-        self.display();
+        print(f"This is a {type(self)} object : ")
+        self.display()
 
 class TenantPermission(object):
     """
@@ -244,8 +303,24 @@ class TenantPermission(object):
     def __init__(self,
                  tenant_patterns=None,
                  allowed_actions=None):
-        self.tenant_patterns = [] if tenant_patterns is None else tenant_patterns
-        self.allowed_actions = [] if allowed_actions is None else allowed_actions
+        self._tenant_patterns = [] if tenant_patterns is None else tenant_patterns
+        self._allowed_actions = [] if allowed_actions is None else allowed_actions
+
+    @property
+    def tenant_patterns(self):
+        return self._tenant_patterns
+
+    @tenant_patterns.setter
+    def tenant_patterns(self,tenant_patterns):
+        self.tenant_patterns = tenant_patterns
+    
+    @property
+    def allowed_actions(self):
+        return self._allowed_actions
+
+    @allowed_actions.setter
+    def allowed_actions(self,allowed_actions):
+        self.allowed_actions = allowe_actions
 
     def addtenantpattern(self,pattern):
         """
@@ -261,6 +336,7 @@ class TenantPermission(object):
             self.tenant_patterns.remove(pattern)
         except ValueError:
              print(f"Error : unable to remove {pattern} from the index patterns list")
+    
     #TODO : This part could easily be moved up to an abastract class 
     # in commin with the Index permission object
     def addallowedaction(self,allowed_action):
@@ -278,7 +354,7 @@ class TenantPermission(object):
         except ValueError:
             print(f"Error : unable to remove masked field {self.masked_field}")
     
-    def forserialization(self):
+    def tojson(self):
         """
             Poor man's json deserializer
             return a big dict with our objects
@@ -289,17 +365,26 @@ class TenantPermission(object):
                 "tenant_patterns" : self.tenant_patterns,
                 "allowed_actions" : self.allowed_actions
                }
+    @classmethod
+    def toobject(cls,obj_dict):
+        """
+            takes a json dict and returns an object
+        """
+        _tenant_patterns = _obj_dict["tenant_patterns"]
+        _allowed_actions = _obj_dict["allowed_actions"]
+        
+        return cls(tenant_patterns=_tenant_patterns, allowed_actions=_allowed_actions)
 
 class IndexPermission():
     """
         Class abstracting an index permission
     """
     def __init__(self,
-                index_patterns=None,
-                dls=None,
-                fls=None,
-                masked_fields=None,
-                allowed_actions=None):
+                 index_patterns=None,
+                 dls=None,
+                 fls=None,
+                 masked_fields=None,
+                 allowed_actions=None):
         """
             :arg index_patterns: List of index patterns
             :arg dls: Document Level Security as a json string
@@ -309,12 +394,53 @@ class IndexPermission():
             :arg allowed_actions: List of al lowed actions
         """
 
-        self.index_patterns = [] if index_patterns is None else index_patterns
-        self.dls = dls
-        self.fls = [] if fls is None else fls
-        self.masked_fields = [] if masked_fields is None else masked_fields
-        self.allowed_actions = [] if allowed_actions is None else allowed_actions
+        self._index_patterns = [] if index_patterns is None else index_patterns
+        self._dls = dls
+        self._fls = [] if fls is None else fls
+        self._masked_fields = [] if masked_fields is None else masked_fields
+        self._allowed_actions = [] if allowed_actions is None else allowed_actions
+   
+    # Getter and Setters ...
+    @property
+    def index_patterns(self):
+        return self._index_patterns
+
+    @index_patterns.setter
+    def index_patterns(self,index_patterns):
+        self._index_patters = index_patterns 
+
+    @property
+    def dls(self):
+        return self._dls
+
+    @dls.setter
+    def dls(self,dls):
+        self._dls = dls
     
+    @property
+    def fls(self):
+        return self._fls
+
+    @fls.setter
+    def fls(self,fls):
+        self._fls = fls 
+    
+    @property
+    def masked_fields(self):
+        return self._masked_fields
+
+    @masked_fields.setter
+    def masked_fields(self,masked_fields):
+        self._masked_fields = masked_fields 
+    
+    @property
+    def allowed_actions(self):
+        return self._allowed_actions
+
+    @allowed_actions.setter
+    def allowed_actions(self,allowed_actions):
+        self._allowed_actions = allowed_actions 
+ 
     #TODO : This part could easily be moved up to an abastract class 
     # in common with the TenantPermission object
     def addindexpattern(self,pattern):
@@ -393,7 +519,7 @@ class IndexPermission():
         except ValueError:
             print(f"Error : unable to remove masked field {self.masked_field}")
 
-    def forserialization(self):
+    def tojson(self):
         """
             Poor man's json deserializer
             return a big dict with our objects
@@ -407,3 +533,17 @@ class IndexPermission():
                 "masked_fields": self.masked_fields,
                 "allowed_actions" : self.allowed_actions
                }
+    
+    @classmethod
+    def toobject(cls,obj_dict):
+        """
+            takes a json dict and returns an object
+        """
+        _index_patterns = _obj_dict["index_patterns"]
+        _allowed_actions = _obj_dict["allowed_actions"]
+        _dls = _obj_dict["dls"] 
+        _fls = _obj_dict["fls"] 
+        _masked_fields = _obj_dict["masked_fields"] 
+        
+        return cls(tenant_patterns=_tenant_patterns, allowed_actions=_allowed_actions)
+

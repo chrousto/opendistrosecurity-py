@@ -6,9 +6,15 @@ import os
 import sys
 import getpass
 
+import pprint as pp
+
+#Disable the no cert warning
+import urllib3 
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 # Setup the path to the API
 this_file_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.abspath(this_file_dir+'/../lib/opendistrosecurity'))
+sys.path.insert(0, os.path.abspath(this_file_dir+'/../lib/opendistrosecurity/'))
 
 from elasticsearch import NotFoundError
 from opendistrosecurity import OpenDistro
@@ -125,9 +131,7 @@ class TestRoles(unittest.TestCase):
         """
         #Create a tenant
         _test_role_name_request = "_test_role"
-        _test_role_description_request = "_test_role_description"
         _body = {
-                    "description" : _test_role_description_request,
                     "tenant_permissions" : [
                                             {
                                              "tenant_patterns" : ["tenant1", "tenant2"],
@@ -155,8 +159,6 @@ class TestRoles(unittest.TestCase):
         _response_role_params = _response_role[_test_role_name_request]       
         _requested_role_params = _requested_role[_test_role_name_request]       
  
-        self.assertEqual(_requested_role_params["description"], 
-                         _response_role_params["description"])
         self.assertEqual(_requested_role_params["index_permissions"], 
                          _response_role_params["index_permissions"])
         self.assertEqual(_requested_role_params["tenant_permissions"], 
@@ -203,11 +205,15 @@ class TestRoles(unittest.TestCase):
         #Save Role to OpenDistro
         role_request.save(self.roles_client)
         
-        #Retrieve Role and validate the fromdict method
+        #Retrieve Role and validate the fromdict method at the same time
         role_response = OpenDistroRole.fromdict(self.roles_client.get_role(role_request.name))
         
         # Verify some things
         self.assertEqual(role_request.name,role_response.name)
+        self.assertEqual(role_request.index_permissions[0].index_patterns[0],
+                         role_response.index_permissions[0].index_patterns[0])
+        self.assertEqual(role_request.index_permissions[1].index_patterns[1],
+                         role_response.index_permissions[1].index_patterns[1])
 
 if __name__ == '__main__':
     unittest.main()
